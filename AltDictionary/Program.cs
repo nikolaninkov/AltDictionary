@@ -7,3 +7,7 @@ dict.Add(3, "Tri");
 Console.WriteLine(dict[1]);
 Console.WriteLine(dict[2]);
 Console.WriteLine(dict[3]);
+var newDict = new AltDictionary<int, string>(dict, null);
+Console.WriteLine(dict[1]);
+Console.WriteLine(dict[2]);
+Console.WriteLine(dict[3]);
