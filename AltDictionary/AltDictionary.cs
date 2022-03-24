@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Toolkit.Diagnostics;
+using static Alt.Hashing;
 
 namespace Alt
 {
@@ -14,7 +15,11 @@ namespace Alt
             }
             else
             {
-                bucketCount = capacity + 1;
+                if (capacity == 0)
+                {
+                    capacity++;
+                }
+                bucketCount = GetBucketCount(capacity);
                 collection = new List<KeyValuePair<TKey, TValue>>[bucketCount];
                 for (int i = 0; i < bucketCount; i++)
                 {
@@ -53,22 +58,24 @@ namespace Alt
         {
             get
             {
-                TValue? value;
-                TryGetValue(key, out value);
+                if (!TryGetValue(key, out TValue? value))
+                {
+                    // KeyNotFoundException not supported in ThrowHelper? :(
+                    throw new KeyNotFoundException("There is no key-value pair with such a key.");
+                }
                 return value;
             }
             set
             {
                 if (value != null)
                 {
-                    int index = collection[Hash(key)].FindIndex(x => comparer.Equals(x.Key, key));
+                    int index = collection[Hash(key, bucketCount)].FindIndex(x => comparer.Equals(x.Key, key));
                     if (index >= 0)
                     {
-                        collection[Hash(key)][index] = new KeyValuePair<TKey, TValue>(key, value);
+                        collection[Hash(key, bucketCount)][index] = new KeyValuePair<TKey, TValue>(key, value);
                     }
                     else
                     {
-                        // KeyNotFoundException not supported in ThrowHelper? :(
                         throw new KeyNotFoundException("There is no key-value pair with such a key.");
                     }
                 }
@@ -97,7 +104,7 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentException("A value with that key already exists.");
             }
-            collection[Hash(key)].Add(new KeyValuePair<TKey, TValue>(key, value));
+            collection[Hash(key, bucketCount)].Add(new KeyValuePair<TKey, TValue>(key, value));
             UpdateCollectionAfterAdding();
         }
 
@@ -105,7 +112,7 @@ namespace Alt
         {
             if (!ContainsKey(item.Key))
             {
-                collection[Hash(item.Key)].Add(item);
+                collection[Hash(item.Key, bucketCount)].Add(item);
                 UpdateCollectionAfterAdding();
             }
         }
@@ -118,11 +125,13 @@ namespace Alt
             }
             collectionCount = 0;
             loadRatio = 0;
+            bucketCount = 3;
+            collection = new List<KeyValuePair<TKey, TValue>>[bucketCount];
         }
 
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
-            return collection[Hash(item.Key)].Contains(item);
+            return collection[Hash(item.Key, bucketCount)].Contains(item);
         }
 
         public bool ContainsKey(TKey key)
@@ -131,7 +140,7 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentNullException("Key value cannot be null.");
             }
-            return collectionCount > 0 && collection[Hash(key)].Any(x => comparer.Equals(x.Key, key));
+            return collectionCount > 0 && collection[Hash(key, bucketCount)].Any(x => comparer.Equals(x.Key, key));
         }
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
@@ -174,11 +183,10 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentNullException("Key value cannot be null.");
             }
-            int index = collection[Hash(key)].FindIndex(x => comparer.Equals(x.Key, key));
+            int index = collection[Hash(key, bucketCount)].FindIndex(x => comparer.Equals(x.Key, key));
             if (index >= 0)
             {
-                collection[Hash(key)].RemoveAt(index);
-                UpdateCollectionAfterRemoving();
+                collection[Hash(key, bucketCount)].RemoveAt(index);
                 return true;
             }
             return false;
@@ -186,9 +194,8 @@ namespace Alt
 
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            if (item.Key != null && collection[Hash(item.Key)].Remove(item))
+            if (item.Key != null && collection[Hash(item.Key, bucketCount)].Remove(item))
             {
-                UpdateCollectionAfterRemoving();
                 return true;
             }
             return false;
@@ -200,8 +207,8 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentNullException("Key value cannot be null.");
             }
-            int index = collection[Hash(key)].FindIndex(x => comparer.Equals(x.Key, key));
-            value = index == -1 ? default : collection[Hash(key)][index].Value;
+            int index = collection[Hash(key, bucketCount)].FindIndex(x => comparer.Equals(x.Key, key));
+            value = index == -1 ? default : collection[Hash(key, bucketCount)][index].Value;
             return index != -1;
         }
 
@@ -236,41 +243,17 @@ namespace Alt
             return keys;
         }
 
-        private int Hash(TKey key)
-        {
-            if (key != null)
-            {
-                try
-                {
-                    var hashCode = key.GetHashCode();
-                    return hashCode % bucketCount;
-                }
-                catch (Exception)
-                {
-                    return 0;
-                }
-            }
-            else
-            {
-                return 0;
-            }
-        }
-
         private void UpdateCollectionAfterAdding()
         {
             loadRatio = (float)++collectionCount / bucketCount;
             if (loadRatio > 2)
             {
-                Rehash(bucketCount * 2);
-            }
-        }
-
-        private void UpdateCollectionAfterRemoving()
-        {
-            loadRatio = (float)--collectionCount / bucketCount;
-            if (loadRatio < 0.5 && bucketCount > 1)
-            {
-                Rehash(bucketCount / 2 + 1);
+                var newBucketCount = GetBucketCount(collectionCount);
+                if (newBucketCount > bucketCount)
+                {
+                    bucketCount = newBucketCount;
+                    Rehash(bucketCount);
+                }
             }
         }
 
@@ -287,7 +270,7 @@ namespace Alt
             {
                 foreach (KeyValuePair<TKey, TValue> item in collection[i])
                 {
-                    newCollection[Hash(item.Key)].Add(item);
+                    newCollection[Hash(item.Key, bucketCount)].Add(item);
                 }
             }
             collection = newCollection;
