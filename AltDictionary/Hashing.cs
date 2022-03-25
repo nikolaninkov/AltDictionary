@@ -58,7 +58,8 @@ namespace Alt
             {
                 return false;
             }
-            for (int i = 2; i <= Math.Sqrt(number); i++)
+            double s = Math.Sqrt(number);
+            for (int i = 2; i <= s; i++)
             {
                 if (number % i == 0)
                 {

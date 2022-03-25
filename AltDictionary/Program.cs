@@ -1,5 +1,6 @@
 ﻿using Alt;
 
+Console.WriteLine("AltDictionary test:");
 var dict = new AltDictionary<int, string>();
 dict.Add(1, "Jedan");
 dict.Add(2, "Dva");

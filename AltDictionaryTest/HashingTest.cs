@@ -7,12 +7,12 @@ namespace AltTest
     {
         internal TestPerson(string name, int age)
         {
-            this.name = name;
-            this.age = age;
+            Name = name;
+            Age = age;
         }
 
-        private readonly string name;
-        private readonly int age;
+        public string Name { get; set; }
+        public int Age { get; set; }
     }
 
     [TestClass]

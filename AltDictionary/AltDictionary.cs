@@ -13,21 +13,9 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentOutOfRangeException("Capacity must be a non-negative number.");
             }
-            else
-            {
-                if (capacity == 0)
-                {
-                    capacity++;
-                }
-                bucketCount = GetBucketCount(capacity);
-                collection = new List<KeyValuePair<TKey, TValue>>[bucketCount];
-                for (int i = 0; i < bucketCount; i++)
-                {
-                    collection[i] = new List<KeyValuePair<TKey, TValue>>();
-                }
-                loadRatio = collectionCount / bucketCount;
-                collectionCount = 0;
-            }
+            bucketCount = GetBucketCount(capacity);
+            collectionCount = 0;
+            collection = GetInitialisedCollection(bucketCount);
             this.comparer = comparer ?? EqualityComparer<TKey>.Default;
         }
 
@@ -119,14 +107,9 @@ namespace Alt
 
         public void Clear()
         {
-            for (int i = 0; i < bucketCount; i++)
-            {
-                collection[i].Clear();
-            }
-            collectionCount = 0;
-            loadRatio = 0;
             bucketCount = 3;
-            collection = new List<KeyValuePair<TKey, TValue>>[bucketCount];
+            collectionCount = 0;
+            collection = GetInitialisedCollection(bucketCount);
         }
 
         public bool Contains(KeyValuePair<TKey, TValue> item)
@@ -157,7 +140,7 @@ namespace Alt
             {
                 throw new ArgumentException("Array cannot hold all elements.");
             }
-            for (int i = 0, j = arrayIndex; i < array.Length; i++)
+            for (int i = 0, j = arrayIndex; i < bucketCount; i++)
             {
                 foreach (KeyValuePair<TKey, TValue> item in collection[i])
                 {
@@ -194,9 +177,9 @@ namespace Alt
 
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            if (item.Key != null && collection[Hash(item.Key, bucketCount)].Remove(item))
+            if (item.Key != null)
             {
-                return true;
+                return Remove(item.Key);
             }
             return false;
         }
@@ -245,41 +228,43 @@ namespace Alt
 
         private void UpdateCollectionAfterAdding()
         {
-            loadRatio = (float)++collectionCount / bucketCount;
-            if (loadRatio > 2)
+            if (++collectionCount == bucketCount)
             {
-                var newBucketCount = GetBucketCount(collectionCount);
+                int newBucketCount = GetBucketCount(collectionCount);
                 if (newBucketCount > bucketCount)
                 {
-                    bucketCount = newBucketCount;
-                    Rehash(bucketCount);
+                    Rehash(newBucketCount);
                 }
             }
         }
 
         private void Rehash(int newBucketCount)
         {
-            List<KeyValuePair<TKey, TValue>>[] newCollection = new List<KeyValuePair<TKey, TValue>>[newBucketCount];
-            for (int i = 0; i < newBucketCount; i++)
-            {
-                newCollection[i] = new List<KeyValuePair<TKey, TValue>>();
-            }
-            int oldBucketCount = bucketCount;
-            bucketCount = newBucketCount;
-            for (int i = 0; i < oldBucketCount; i++)
+            List<KeyValuePair<TKey, TValue>>[] newCollection = GetInitialisedCollection(newBucketCount);      
+            for (int i = 0; i < bucketCount; i++)
             {
                 foreach (KeyValuePair<TKey, TValue> item in collection[i])
                 {
-                    newCollection[Hash(item.Key, bucketCount)].Add(item);
+                    newCollection[Hash(item.Key, newBucketCount)].Add(item);
                 }
             }
             collection = newCollection;
+            bucketCount = newBucketCount;
+        }
+
+        private static List<KeyValuePair<TKey, TValue>>[] GetInitialisedCollection(int bucketCount)
+        {
+            var collection = new List<KeyValuePair<TKey, TValue>>[bucketCount];
+            for (int i = 0; i < bucketCount; i++)
+            {
+                collection[i] = new List<KeyValuePair<TKey, TValue>>();
+            }
+            return collection;
         }
 
         private List<KeyValuePair<TKey, TValue>>[] collection;
         private readonly IEqualityComparer<TKey> comparer;
         private int bucketCount;
-        private float loadRatio;
         private int collectionCount;
     }
 }
