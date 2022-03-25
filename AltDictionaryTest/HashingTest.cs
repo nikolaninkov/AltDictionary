@@ -56,18 +56,24 @@ namespace AltTest
             Assert.IsTrue(IsPrime(1) == false);
             Assert.IsTrue(IsPrime(-1) == false);
             Assert.IsTrue(IsPrime(2) == true);
+            Assert.IsTrue(IsPrime(3) == true);
+            Assert.IsTrue(IsPrime(5) == true);
+            Assert.IsTrue(IsPrime(7) == true);
             Assert.IsTrue(IsPrime(11) == true);
+            Assert.IsTrue(IsPrime(13) == true);
             Assert.IsTrue(IsPrime(69) == false);
         }
 
         [TestMethod]
         public void GetBucketCountTest()
         {
-            Assert.IsTrue(GetBucketCount(-5) == -5);
+            Assert.IsTrue(GetBucketCount(-5) == 3);
             Assert.IsTrue(GetBucketCount(17) == 37);
             Assert.IsTrue(GetBucketCount(5) == 11);
             Assert.IsTrue(GetBucketCount(1) == 3);
             Assert.IsTrue(GetBucketCount(0) == 3);
+            Assert.IsTrue(GetBucketCount(2) == 5);
+            Assert.IsTrue(GetBucketCount(3) == 7);
             Assert.IsTrue(GetBucketCount(40) == 83);
         }
     }

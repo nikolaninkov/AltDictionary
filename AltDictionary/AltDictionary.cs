@@ -13,10 +13,11 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentOutOfRangeException("Capacity must be a non-negative number.");
             }
-            bucketCount = GetBucketCount(capacity);
             collectionCount = 0;
-            collection = GetInitialisedCollection(bucketCount);
+            collection = GetInitialisedCollection(GetBucketCount(capacity));
             this.comparer = comparer ?? EqualityComparer<TKey>.Default;
+            keys = new List<TKey>();
+            values = new List<TValue>();
         }
 
         public AltDictionary() : this(0, null) { }
@@ -27,9 +28,8 @@ namespace Alt
 
         public AltDictionary(AltDictionary<TKey, TValue> altDictionary, IEqualityComparer<TKey>? comparer)
         {
-            bucketCount = altDictionary.Count + 1;
-            collection = new List<KeyValuePair<TKey, TValue>>[bucketCount];
-            for (int i = 0; i < bucketCount; i++)
+            collection = new List<KeyValuePair<TKey, TValue>>[GetBucketCount(altDictionary.Count)];
+            for (int i = 0; i < collection.Length; i++)
             {
                 collection[i] = new List<KeyValuePair<TKey, TValue>>();
             }
@@ -38,6 +38,8 @@ namespace Alt
                 Add(item);
             }
             this.comparer = comparer ?? EqualityComparer<TKey>.Default;
+            keys = new List<TKey>();
+            values = new List<TValue>();
         }
 
         public AltDictionary(AltDictionary<TKey, TValue> altDictionary) : this(altDictionary, null) { }
@@ -55,12 +57,12 @@ namespace Alt
             }
             set
             {
-                if (value != null)
+                if (key != null)
                 {
-                    int index = collection[Hash(key, bucketCount)].FindIndex(x => comparer.Equals(x.Key, key));
+                    int index = collection[Hash(key, collection.Length)].FindIndex(x => comparer.Equals(x.Key, key));
                     if (index >= 0)
                     {
-                        collection[Hash(key, bucketCount)][index] = new KeyValuePair<TKey, TValue>(key, value);
+                        collection[Hash(key, collection.Length)][index] = new KeyValuePair<TKey, TValue>(key, value);
                     }
                     else
                     {
@@ -74,9 +76,37 @@ namespace Alt
             }
         }
 
-        public ICollection<TKey> Keys => GetKeys();
+        public ICollection<TKey> Keys
+        {
+            get
+            {
+                keys = new List<TKey>();
+                for (int i = 0; i < collection.Length; i++)
+                {
+                    foreach (var item in collection[i])
+                    {
+                        keys.Add(item.Key);
+                    }
+                }
+                return keys;
+            }
+        }
 
-        public ICollection<TValue> Values => GetValues();
+        public ICollection<TValue> Values
+        {
+            get
+            {
+                values = new List<TValue>();
+                for (int i = 0; i < collection.Length; i++)
+                {
+                    foreach (var item in collection[i])
+                    {
+                        values.Add(item.Value);
+                    }
+                }
+                return values;
+            }
+        }
 
         public int Count => collectionCount;
 
@@ -92,7 +122,7 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentException("A value with that key already exists.");
             }
-            collection[Hash(key, bucketCount)].Add(new KeyValuePair<TKey, TValue>(key, value));
+            collection[Hash(key, collection.Length)].Add(new KeyValuePair<TKey, TValue>(key, value));
             UpdateCollectionAfterAdding();
         }
 
@@ -100,21 +130,20 @@ namespace Alt
         {
             if (!ContainsKey(item.Key))
             {
-                collection[Hash(item.Key, bucketCount)].Add(item);
+                collection[Hash(item.Key, collection.Length)].Add(item);
                 UpdateCollectionAfterAdding();
             }
         }
 
         public void Clear()
         {
-            bucketCount = 3;
             collectionCount = 0;
-            collection = GetInitialisedCollection(bucketCount);
+            collection = GetInitialisedCollection(collection.Length);
         }
 
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
-            return collection[Hash(item.Key, bucketCount)].Contains(item);
+            return collection[Hash(item.Key, collection.Length)].Contains(item);
         }
 
         public bool ContainsKey(TKey key)
@@ -123,7 +152,7 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentNullException("Key value cannot be null.");
             }
-            return collectionCount > 0 && collection[Hash(key, bucketCount)].Any(x => comparer.Equals(x.Key, key));
+            return collectionCount > 0 && collection[Hash(key, collection.Length)].Any(x => comparer.Equals(x.Key, key));
         }
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
@@ -140,7 +169,7 @@ namespace Alt
             {
                 throw new ArgumentException("Array cannot hold all elements.");
             }
-            for (int i = 0, j = arrayIndex; i < bucketCount; i++)
+            for (int i = 0, j = arrayIndex; i < collection.Length; i++)
             {
                 foreach (KeyValuePair<TKey, TValue> item in collection[i])
                 {
@@ -151,7 +180,7 @@ namespace Alt
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            for (int i = 0; i < bucketCount; i++)
+            for (int i = 0; i < collection.Length; i++)
             {
                 foreach (KeyValuePair<TKey, TValue> item in collection[i])
                 {
@@ -166,10 +195,10 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentNullException("Key value cannot be null.");
             }
-            int index = collection[Hash(key, bucketCount)].FindIndex(x => comparer.Equals(x.Key, key));
+            int index = collection[Hash(key, collection.Length)].FindIndex(x => comparer.Equals(x.Key, key));
             if (index >= 0)
             {
-                collection[Hash(key, bucketCount)].RemoveAt(index);
+                collection[Hash(key, collection.Length)].RemoveAt(index);
                 return true;
             }
             return false;
@@ -190,8 +219,8 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentNullException("Key value cannot be null.");
             }
-            int index = collection[Hash(key, bucketCount)].FindIndex(x => comparer.Equals(x.Key, key));
-            value = index == -1 ? default : collection[Hash(key, bucketCount)][index].Value;
+            int index = collection[Hash(key, collection.Length)].FindIndex(x => comparer.Equals(x.Key, key));
+            value = index == -1 ? default : collection[Hash(key, collection.Length)][index].Value;
             return index != -1;
         }
 
@@ -200,38 +229,12 @@ namespace Alt
             return GetEnumerator();
         }
 
-        private ICollection<TValue> GetValues()
-        {
-            var values = new List<TValue>();
-            for (int i = 0; i < bucketCount; i++)
-            {
-                foreach (var item in collection[i])
-                {
-                    values.Add(item.Value);
-                }
-            }
-            return values;
-        }
-
-        private ICollection<TKey> GetKeys()
-        {
-            var keys = new List<TKey>();
-            for (int i = 0; i < bucketCount; i++)
-            {
-                foreach (var item in collection[i])
-                {
-                    keys.Add(item.Key);
-                }
-            }
-            return keys;
-        }
-
         private void UpdateCollectionAfterAdding()
         {
-            if (++collectionCount == bucketCount)
+            if (++collectionCount == collection.Length)
             {
                 int newBucketCount = GetBucketCount(collectionCount);
-                if (newBucketCount > bucketCount)
+                if (newBucketCount > collection.Length)
                 {
                     Rehash(newBucketCount);
                 }
@@ -241,7 +244,7 @@ namespace Alt
         private void Rehash(int newBucketCount)
         {
             List<KeyValuePair<TKey, TValue>>[] newCollection = GetInitialisedCollection(newBucketCount);      
-            for (int i = 0; i < bucketCount; i++)
+            for (int i = 0; i < collection.Length; i++)
             {
                 foreach (KeyValuePair<TKey, TValue> item in collection[i])
                 {
@@ -249,7 +252,6 @@ namespace Alt
                 }
             }
             collection = newCollection;
-            bucketCount = newBucketCount;
         }
 
         private static List<KeyValuePair<TKey, TValue>>[] GetInitialisedCollection(int bucketCount)
@@ -264,7 +266,8 @@ namespace Alt
 
         private List<KeyValuePair<TKey, TValue>>[] collection;
         private readonly IEqualityComparer<TKey> comparer;
-        private int bucketCount;
         private int collectionCount;
+        private ICollection<TKey> keys;
+        private ICollection<TValue> values;
     }
 }
