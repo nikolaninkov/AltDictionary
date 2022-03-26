@@ -14,7 +14,8 @@ namespace Alt
                 ThrowHelper.ThrowArgumentOutOfRangeException("Capacity must be a non-negative number.");
             }
             collectionCount = 0;
-            collection = GetInitialisedCollection(GetBucketCount(capacity));
+            collection = new List<KeyValuePair<TKey, TValue>>[GetBucketCount(capacity)];
+            InitialiseCollection();
             this.comparer = comparer ?? EqualityComparer<TKey>.Default;
             keys = new List<TKey>();
             values = new List<TValue>();
@@ -138,7 +139,8 @@ namespace Alt
         public void Clear()
         {
             collectionCount = 0;
-            collection = GetInitialisedCollection(collection.Length);
+            collection = new List<KeyValuePair<TKey, TValue>>[GetBucketCount(collection.Length)];
+            InitialiseCollection();
         }
 
         public bool Contains(KeyValuePair<TKey, TValue> item)
@@ -243,7 +245,11 @@ namespace Alt
 
         private void Rehash(int newBucketCount)
         {
-            List<KeyValuePair<TKey, TValue>>[] newCollection = GetInitialisedCollection(newBucketCount);      
+            var newCollection = new List<KeyValuePair<TKey, TValue>>[newBucketCount];
+            for (int i = 0; i < newCollection.Length; i++)
+            {
+                newCollection[i] = new List<KeyValuePair<TKey, TValue>>(1);
+            }
             for (int i = 0; i < collection.Length; i++)
             {
                 foreach (KeyValuePair<TKey, TValue> item in collection[i])
@@ -254,14 +260,12 @@ namespace Alt
             collection = newCollection;
         }
 
-        private static List<KeyValuePair<TKey, TValue>>[] GetInitialisedCollection(int bucketCount)
+        private void InitialiseCollection()
         {
-            var collection = new List<KeyValuePair<TKey, TValue>>[bucketCount];
-            for (int i = 0; i < bucketCount; i++)
+            for (int i =0; i < collection.Length; i++)
             {
-                collection[i] = new List<KeyValuePair<TKey, TValue>>();
+                collection[i] = new List<KeyValuePair<TKey, TValue>>(1);
             }
-            return collection;
         }
 
         private List<KeyValuePair<TKey, TValue>>[] collection;
