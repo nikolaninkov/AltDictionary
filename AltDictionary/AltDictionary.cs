@@ -231,6 +231,7 @@ namespace Alt
         private void UpdateCollectionAfterAdding()
         {
             if (++collectionCount == collection.Length)
+            //if (++collectionCount >= 0.7 * collection.Length)
             {
                 int newBucketCount = GetBucketCount(collectionCount);
                 if (newBucketCount > collection.Length)
