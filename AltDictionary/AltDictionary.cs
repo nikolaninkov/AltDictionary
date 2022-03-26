@@ -30,10 +30,7 @@ namespace Alt
         public AltDictionary(AltDictionary<TKey, TValue> altDictionary, IEqualityComparer<TKey>? comparer)
         {
             collection = new List<KeyValuePair<TKey, TValue>>[GetBucketCount(altDictionary.Count)];
-            for (int i = 0; i < collection.Length; i++)
-            {
-                collection[i] = new List<KeyValuePair<TKey, TValue>>();
-            }
+            InitialiseCollection();
             foreach (KeyValuePair<TKey, TValue> item in altDictionary)
             {
                 Add(item);
