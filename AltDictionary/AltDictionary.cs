@@ -7,7 +7,7 @@ namespace Alt
 {
     public class AltDictionary<TKey, TValue> : IDictionary<TKey, TValue>
     {
-        public AltDictionary(int capacity, IEqualityComparer<TKey>? comparer)
+        public AltDictionary(int capacity, IComparer<TKey>? comparer)
         {
             if (capacity < 0)
             {
@@ -16,7 +16,7 @@ namespace Alt
             collectionCount = 0;
             collection = new List<KeyValuePair<TKey, TValue>>[GetBucketCount(capacity)];
             InitialiseCollection();
-            this.comparer = comparer ?? EqualityComparer<TKey>.Default;
+            this.comparer = comparer ?? Comparer<TKey>.Default;
             keys = new List<TKey>();
             values = new List<TValue>();
         }
@@ -25,9 +25,9 @@ namespace Alt
 
         public AltDictionary(int capacity) : this(capacity, null) { }
 
-        public AltDictionary(IEqualityComparer<TKey>? comparer) : this(0, comparer) { }
+        public AltDictionary(IComparer<TKey>? comparer) : this(0, comparer) { }
 
-        public AltDictionary(AltDictionary<TKey, TValue> altDictionary, IEqualityComparer<TKey>? comparer)
+        public AltDictionary(AltDictionary<TKey, TValue> altDictionary, IComparer<TKey>? comparer)
         {
             collection = new List<KeyValuePair<TKey, TValue>>[GetBucketCount(altDictionary.Count)];
             InitialiseCollection();
@@ -35,7 +35,7 @@ namespace Alt
             {
                 Add(item);
             }
-            this.comparer = comparer ?? EqualityComparer<TKey>.Default;
+            this.comparer = comparer ?? Comparer<TKey>.Default;
             keys = new List<TKey>();
             values = new List<TValue>();
         }
@@ -57,7 +57,7 @@ namespace Alt
             {
                 if (key != null)
                 {
-                    int index = collection[Hash(key, collection.Length)].FindIndex(x => comparer.Equals(x.Key, key));
+                    int index = collection[Hash(key, collection.Length)].FindIndex(x => comparer.Compare(x.Key, key) == 0);
                     if (index >= 0)
                     {
                         collection[Hash(key, collection.Length)][index] = new KeyValuePair<TKey, TValue>(key, value);
@@ -151,7 +151,7 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentNullException("Key value cannot be null.");
             }
-            return collectionCount > 0 && collection[Hash(key, collection.Length)].Any(x => comparer.Equals(x.Key, key));
+            return collectionCount > 0 && collection[Hash(key, collection.Length)].Any(x => comparer.Compare(x.Key, key) == 0);
         }
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
@@ -194,7 +194,7 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentNullException("Key value cannot be null.");
             }
-            int index = collection[Hash(key, collection.Length)].FindIndex(x => comparer.Equals(x.Key, key));
+            int index = collection[Hash(key, collection.Length)].FindIndex(x => comparer.Compare(x.Key, key) == 0);
             if (index >= 0)
             {
                 collection[Hash(key, collection.Length)].RemoveAt(index);
@@ -218,7 +218,7 @@ namespace Alt
             {
                 ThrowHelper.ThrowArgumentNullException("Key value cannot be null.");
             }
-            int index = collection[Hash(key, collection.Length)].FindIndex(x => comparer.Equals(x.Key, key));
+            int index = collection[Hash(key, collection.Length)].FindIndex(x => comparer.Compare(x.Key, key) == 0);
             value = index == -1 ? default : collection[Hash(key, collection.Length)][index].Value;
             return index != -1;
         }
@@ -267,7 +267,7 @@ namespace Alt
         }
 
         private List<KeyValuePair<TKey, TValue>>[] collection;
-        private readonly IEqualityComparer<TKey> comparer;
+        private readonly IComparer<TKey> comparer;
         private int collectionCount;
         private ICollection<TKey> keys;
         private ICollection<TValue> values;
