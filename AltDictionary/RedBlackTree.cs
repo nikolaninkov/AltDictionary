@@ -447,6 +447,19 @@ namespace Alt
             return Contains(item.Key);
         }
 
+        public bool Contains(TKey key, TValue value)
+        {
+            var node = GetNode(key);
+            if (value != null)
+            {
+                return node != null && value.Equals(node.Value);
+            }
+            else
+            {
+                return node != null && node.Value == null;
+            }
+        }
+
         public void CopyTo(Node<TKey, TValue>[] array, int arrayIndex)
         {
             if (array == null)
