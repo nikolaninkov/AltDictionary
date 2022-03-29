@@ -32,22 +32,26 @@ namespace Alt
 
         public bool Add(TKey key, TValue value)
         {
-            Node<TKey, TValue> node = new(key, value);
-            if (Root == null)
+            var parent = FindFutureParent(Root, key);
+            if (parent != null)
             {
-                Insert(node, null, Direction.NONE);
-                return true;
-            }
-            else
-            {
-                var parent = FindFutureParent(Root, key);
-                if (parent != null)
+                if (comparer.Compare(parent.Key, key) != 0)
                 {
+                    Node<TKey, TValue> node = new(key, value);
                     var direction = comparer.Compare(key, parent.Key) < 0 ? Direction.LEFT : Direction.RIGHT;
                     Insert(node, parent, direction);
                     return true;
                 }
-                return false;
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                Node<TKey, TValue> node = new(key, value);
+                Insert(node, null, Direction.NONE);
+                return true;
             }
         }
 
@@ -71,11 +75,6 @@ namespace Alt
         public int GetHeight()
         {
             return GetHeightFromNode(Root);
-        }
-
-        public bool IsBalanced()
-        {
-            return IsTreeBalancedFromNode(Root);
         }
 
         public IEnumerator<Node<TKey, TValue>> GetEnumerator()
@@ -103,11 +102,12 @@ namespace Alt
             }
             else
             {
-                return comparer.Compare(key, node.Key) == 0 ? node : (comparer.Compare(key, node.Key) > 0 ? FindKeyInSubtree(node.Right, key) : FindKeyInSubtree(node.Left, key));
+                return comparer.Compare(key, node.Key) == 0 ? node :
+                    (comparer.Compare(key, node.Key) > 0 ? FindKeyInSubtree(node.Right, key) : FindKeyInSubtree(node.Left, key));
             }
         }
 
-        private Node<TKey, TValue>? FindFutureParent(Node<TKey, TValue> node, TKey key)
+        private Node<TKey, TValue>? FindFutureParent(Node<TKey, TValue>? node, TKey key)
         {
             if (node == null)
             {
@@ -497,18 +497,6 @@ namespace Alt
             else
             {
                 return 1 + Math.Max(GetHeightFromNode(node.Left), GetHeightFromNode(node.Right));
-            }
-        }
-
-        private bool IsTreeBalancedFromNode(Node<TKey, TValue>? node)
-        {
-            if (node == null)
-            {
-                return true;
-            }
-            else
-            {
-                return Math.Abs(GetHeightFromNode(node.Left) - GetHeightFromNode(node.Right)) <= 1 && IsTreeBalancedFromNode(node.Left) && IsTreeBalancedFromNode(node.Right);
             }
         }
 

@@ -3,47 +3,76 @@
 var altDict = new AltDictionary<int, int>();
 var regularDict = new Dictionary<int, int>();
 
-var startTimeAlt = DateTime.Now;
+TimeSpan regularMax = TimeSpan.Zero;
+TimeSpan altMax = TimeSpan.Zero;
+var startTime = DateTime.Now;
+var endTime = DateTime.Now;
+var startTimeGet = DateTime.Now;
+var endTimeGet = DateTime.Now;
+int elementCount = 1000000;
+int randomAccessCount = 5000000;
 
-for (int i = 0; i < 1000000; i++)
+startTime = DateTime.Now;
+for (int i = 0; i < elementCount; i++)
 {
     altDict.Add(i, i);
 }
-var rand = new Random(startTimeAlt.Millisecond);
-var startTimeRandomAccessAlt = DateTime.Now;
-for (int i = 0; i < 5000000; i++)
+endTime = DateTime.Now;
+Console.WriteLine("Time to add elements into alt: {0}", endTime - startTime);
+
+var rand = new Random(DateTime.Now.Millisecond);
+startTime = DateTime.Now;
+for (int i = 0; i < randomAccessCount; i++)
 {
+    startTimeGet = DateTime.Now;
     altDict.TryGetValue(rand.Next(0, 1000000), out _);
+    endTimeGet = DateTime.Now;
+    if (altMax < endTimeGet - startTimeGet)
+    {
+        altMax = endTimeGet - startTimeGet;
+    }
 }
-var endTimeRandomAccessAlt = DateTime.Now;
-Console.WriteLine("Time for random accesses, alt:");
-Console.WriteLine(endTimeRandomAccessAlt - startTimeRandomAccessAlt);
-for (int i = 0; i < 1000000; i++)
+endTime = DateTime.Now;
+Console.WriteLine("Worst time for random access, alt: {0}", altMax);
+Console.WriteLine("Total time for random access, alt: {0}", endTime - startTime);
+
+startTime = DateTime.Now;
+for (int i = 0; i < elementCount; i++)
 {
     altDict.Remove(i);
 }
-var endTimeAlt = DateTime.Now;
-Console.WriteLine("Total time, alt:");
-Console.WriteLine(endTimeAlt - startTimeAlt);
+endTime = DateTime.Now;
+Console.WriteLine("Time to remove elements from alt: {0}", endTime - startTime);
 
-var startTimeRegular = DateTime.Now;
-for (int i = 0; i < 1000000; i++)
+
+startTime = DateTime.Now;
+for (int i = 0; i < elementCount; i++)
 {
     regularDict.Add(i, i);
 }
-var rand2 = new Random(startTimeRegular.Millisecond);
-var startTimeRandomAccessRegular = DateTime.Now;
-for (int i = 0; i < 5000000; i++)
+endTime = DateTime.Now;
+Console.WriteLine("Time to add elements into regular: {0}", endTime - startTime);
+
+var rand2 = new Random(DateTime.Now.Millisecond);
+startTime = DateTime.Now;
+for (int i = 0; i < randomAccessCount; i++)
 {
+    startTimeGet = DateTime.Now;
     altDict.TryGetValue(rand2.Next(0, 1000000), out _);
+    endTimeGet = DateTime.Now;
+    if (regularMax < endTimeGet - startTimeGet)
+    {
+        regularMax = endTimeGet - startTimeGet;
+    }
 }
-var endTimeRandomAccessRegular = DateTime.Now;
-Console.WriteLine("Time for random accesses, regular:");
-Console.WriteLine(endTimeRandomAccessRegular - startTimeRandomAccessRegular);
-for (int i = 0; i < 1000000; i++)
+endTime = DateTime.Now;
+Console.WriteLine("Total time for random access, regular: {0}", endTime - startTime);
+Console.WriteLine("Worst time for random access, regular: {0}", regularMax);
+
+startTime = DateTime.Now;
+for (int i = 0; i < elementCount; i++)
 {
     regularDict.Remove(i);
 }
-var endTimeRegular = DateTime.Now;
-Console.WriteLine("Total time, regular:");
-Console.WriteLine(endTimeRegular - startTimeRegular);
+endTime = DateTime.Now;
+Console.WriteLine("Time to remove elements from regular: {0}", endTime - startTime);
