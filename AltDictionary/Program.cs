@@ -10,7 +10,7 @@ var endTime = DateTime.Now;
 var startTimeGet = DateTime.Now;
 var endTimeGet = DateTime.Now;
 int elementCount = 1000000;
-int randomAccessCount = 5000000;
+int randomAccessCount = 10000000;
 
 startTime = DateTime.Now;
 for (int i = 0; i < elementCount; i++)

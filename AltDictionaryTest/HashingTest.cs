@@ -57,6 +57,8 @@ namespace AltTest
         public void HashingIntegers()
         {
             Assert.IsTrue(Hash(11, 11) == 0);
+            Assert.IsTrue(Hash(-11, 11) == 0);
+            Assert.IsTrue(Hash(-12, 11) == 10);
             Assert.IsTrue(Hash(0, 11) == 0);
             Assert.IsTrue(Hash(16, 11) == 5);
             Assert.IsTrue(Hash(100, 11) == 1);
